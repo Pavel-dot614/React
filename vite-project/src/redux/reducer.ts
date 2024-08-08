@@ -5,8 +5,8 @@ import {
 } from './actions';
 
 const initialState = {
-    loading: false,
-    news: [],
+    status: 'idle',
+    articles: [],
     error: null,
 };
 

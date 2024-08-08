@@ -1,28 +1,43 @@
-import { useEffect } from 'react'
-import NewsBanner from '../../components/NewsBanner/NewsBanner'
-import styles from './styles.module.css'
-import { getNews } from '../../api/apiNews'
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '../../redux/store'; // Убедитесь, что у вас есть правильные типы для Dispatch и RootState
+import { fetchNews } from '../../redux/newsSlice';
 
 
 
-const Main = () => {
-    useEffect(() => {
-        const fetchNews = async () => {
-            try {
-                const news = await getNews();
-                console.log(news)
-            } catch (error) {
-                console.log(error, "Ошибка загрузки")
-            }
-        }
-        fetchNews()
-    }, [])
+const NewsPage: React.FC = () => {
+ 
+  const dispatch = useDispatch<AppDispatch>();
 
-    return (
-        <main className={styles.main}>
-            <NewsBanner />
-        </main>
-    )
-}
+  const { articles, status, error } = useSelector((state: RootState) => state.news);
 
-export default Main
+  useEffect(() => {
+    dispatch(fetchNews());
+  }, [dispatch]);
+
+  console.log('Articles in Component:', articles);
+
+ 
+  if (status === 'loading') {
+    return <div>Loading...</div>;
+  }
+
+  
+  if (status === 'failed') {
+    return <div>Error: {error}</div>;
+  }
+
+
+  return (
+    <div>
+      {articles.map((article: any, index: number) => (
+        <div key={index}>
+          <h3>{article.title}</h3>
+          <p>{article.description}</p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default NewsPage;

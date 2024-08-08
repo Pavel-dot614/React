@@ -1,11 +1,8 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 interface Article {
-  source: {
-    id: string | null;
-    name: string;
-  };
+  source: { id: string | null; name: string };
   author: string | null;
   title: string;
   description: string;
@@ -17,55 +14,54 @@ interface Article {
 
 interface NewsState {
   articles: Article[];
-  loading: boolean;
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
 
-const initialState: NewsState = {
-  articles: [],
-  loading: false,
-  error: null,
-};
 
-const BASE_URL = import.meta.env.VITE_NEWS_BASE_API_URL;
-const API_KEY = import.meta.env.VITE_NEWS_API_KEY;
+const BASE_URL = 'https://newsapi.org/v2/everything?q=bitcoin';
+const API_KEY = '84dbfb2c5e784833beb92aa1b66b83ca';
 
-export const fetchNews = createAsyncThunk<Article[], void, { rejectValue: string }>(
-  'news/fetchNews',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(BASE_URL, {
-        params: {
-          apiKey: API_KEY,
-          country: 'us',
-        },
-      });
-      console.log('API Response:', response.data);
-      return response.data.articles;
-    } catch (error: any) {
-      console.error('API Error:', error.response ? error.response.data : error.message);
-      return rejectWithValue('Failed to fetch news');
-    }
+
+export const fetchNews = createAsyncThunk('news/fetchNews', async () => {
+  try {
+    const response = await axios.get(BASE_URL, {
+      params: {
+        apiKey: API_KEY,
+      },
+    });
+    console.log('API Response:', response.data.articles); 
+    return response.data.articles;
+  } catch (error) {
+    console.error('API Error:', error); 
+    throw error;
   }
-);
+});
+
 
 const newsSlice = createSlice({
   name: 'news',
-  initialState,
+  initialState: {
+    articles: [],
+    status: 'idle',
+    error: null,
+  } as NewsState,
   reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchNews.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        state.status = 'loading';
+        console.log('Fetch News Pending');
       })
-      .addCase(fetchNews.fulfilled, (state, action: PayloadAction<Article[]>) => {
-        state.loading = false;
+      .addCase(fetchNews.fulfilled, (state, action) => {
+        state.status = 'succeeded';
         state.articles = action.payload;
+        console.log('Updated Articles in State:', state.articles);
       })
       .addCase(fetchNews.rejected, (state, action) => {
-        state.loading = false;
+        state.status = 'failed';
         state.error = action.payload as string;
+        console.log('Fetch News Rejected:', action.error.message);
       });
   },
 });
